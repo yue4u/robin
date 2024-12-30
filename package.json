@@ -8,8 +8,7 @@
     "build": "rolldown -c rolldown.config.ts"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "yue4u",
   "devDependencies": {
     "@atproto/api": "^0.13.23",
     "@types/node": "^22.10.2",
