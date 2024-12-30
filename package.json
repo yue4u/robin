@@ -1,0 +1,22 @@
+{
+  "name": "robin",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/robin.ts",
+    "build": "rolldown -c rolldown.config.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@atproto/api": "^0.13.23",
+    "@types/node": "^22.10.2",
+    "discordeno": "^21.0.0",
+    "dotenv": "^16.4.7",
+    "rolldown": "1.0.0-beta.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
