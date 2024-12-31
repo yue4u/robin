@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { createBot, createDesiredPropertiesObject, Intents } from "discordeno";
 import { AtpAgent, RichText } from "@atproto/api";
+import ogs from "open-graph-scraper";
 
 dotenv.config();
 
@@ -84,13 +85,17 @@ async function bsky(post: Post) {
       return { image: res.data.blob, alt: m.alt };
     })
   );
-  const embed =
-    images.length > 0
-      ? {
-          $type: "app.bsky.embed.images",
-          images,
-        }
-      : undefined;
+
+  const hasImages = images.length > 0;
+  const embed = hasImages
+    ? {
+        $type: "app.bsky.embed.images",
+        images,
+      }
+    : await bskyOgp(aptAgent, rt).catch((e) => {
+        console.error(e);
+        return undefined;
+      });
 
   const { uri } = await aptAgent.post({
     text: rt.text,
@@ -100,6 +105,60 @@ async function bsky(post: Post) {
   // https://github.com/bluesky-social/atproto/discussions/2523
   const [_did, _collection, rkey] = uri.replace("at://", "").split("/");
   return `https://bsky.app/profile/${BSKY_USERNAME}/post/${rkey}`;
+}
+
+async function bskyOgp(agent: AtpAgent, rt: RichText) {
+  let ogUri: string | null = null;
+  rt.facets?.find((facet) =>
+    facet.features.find((feature) => {
+      if (typeof feature.uri === "string" && URL.canParse(feature.uri)) {
+        ogUri = feature.uri;
+        return true;
+      }
+      return false;
+    })
+  );
+
+  if (!ogUri) return undefined;
+  const og = await ogs({
+    url: ogUri,
+    fetchOptions: {
+      headers: {
+        "User-Agent": "Robin Bot OGP Fetcher",
+      },
+    },
+  });
+  if (og.error) throw new Error("failed to fetch ogp");
+
+  const ogImage = og.result.ogImage?.[0];
+  if (!ogImage?.url)
+    return {
+      $type: "app.bsky.embed.external",
+      external: {
+        uri: ogUri,
+        title: og.result.ogTitle,
+        description: og.result.ogDescription,
+      },
+    };
+
+  const ogImageRes = await fetch(ogImage.url);
+  const ogImageBuffer = await ogImageRes.arrayBuffer();
+  const uploadRes = await agent.uploadBlob(new Uint8Array(ogImageBuffer));
+
+  return {
+    $type: "app.bsky.embed.external",
+    external: {
+      uri: ogUri,
+      thumb: {
+        $type: "blob",
+        ref: uploadRes.data.blob.ref,
+        mimeType: uploadRes.data.blob.mimeType,
+        size: uploadRes.data.blob.size,
+      },
+      title: og.result.ogTitle,
+      description: og.result.ogDescription,
+    },
+  };
 }
 
 async function mastodon(post: Post) {

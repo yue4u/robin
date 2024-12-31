@@ -14,6 +14,7 @@
     "@types/node": "^22.10.2",
     "discordeno": "^21.0.0",
     "dotenv": "^16.4.7",
+    "open-graph-scraper": "^6.8.3",
     "rolldown": "1.0.0-beta.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
